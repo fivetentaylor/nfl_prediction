@@ -1,0 +1,43 @@
+#!/bin/bash
+
+#date,vis,hom,vis_score,hom_score,line,tag
+#20120101,BAL,CIN,24,16,-2.5,1.0
+#20120101,BUF,NWE,21,49,10,0.0
+#20120101,CAR,NOR,17,45,7,0.0
+#20120101,CHI,MIN,17,13,2.5,1.0
+#20120101,DAL,NYG,14,31,3,0.0
+#20120101,DET,GNB,41,45,-6.5,0.0
+#20120101,IND,JAX,13,19,3,0.0
+#20120101,KAN,DEN,7,3,2,1.0
+#20120101,NYJ,MIA,17,19,2,0.0
+
+#Seattle Seahawks,SEA,Arizona Cardinals,ARI,01/01/2012,20,23,2.5,40.5
+#St Louis Rams,STL,Arizona Cardinals,ARI,11/06/2011,13,19,3,41.5
+#Tampa Bay Buccaneers,TAM,Atlanta Falcons,ATL,01/01/2012,24,45,9.5,45
+
+
+#date,vis,hom,vis_score,hom_score,line,tag
+#20,ARI,Seattle Seahawks,23,2.5,40.5
+#21,ARI,Carolina Panthers,28,7,37.5
+#31,ARI,New York Giants,27,-1.5,45
+#32,ARI,Pittsburgh Steelers,20,-4.5,46.5
+
+name=$1
+input=${2:-/dev/stdin}
+header='date,vis,hom,vis_score,hom_score,line,tag'
+join -t, -11 -24 <(cat ../teams.csv | sort -t, -k1,1) <(cat $input | sort -t, -k4,4) > tmp
+join -t, -11 -24 <(cat ../teams.csv | sort -t, -k1,1) <(cat tmp | sort -t, -k4,4) |\
+#if [[ 1 == 0 ]]; then
+	awk -F, '{
+		split($5,d,"/");
+		date = d[3] d[1] d[2];
+		printf("%s,%s,%s,%s,%s,%s\n", date, $2, $4, $6, $7, $8);
+	}' | sort | tee >(cat <(echo $header) /dev/stdin > lines_$name.csv) |\
+	awk -F, '{
+		vis = $4 + $6;
+		hom = $5;
+		printf("%s,%s,%s,%d\n", $1, $2, $3, vis - hom);
+		printf("%s,%s,%s,%d\n", $1, $3, $2, hom - vis);
+	}' > graph_$name.csv
+#fi
+rm tmp
