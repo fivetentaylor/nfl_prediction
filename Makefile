@@ -1,6 +1,8 @@
-db.csv : boxscores.csv parse_html.py
+all : boxscores.csv db.csv
+
+parse : boxscores.csv parse_html.py
 	./parse_html.py
 
-boxscores.csv : 
+scrape : 
 	scrapy crawl boxscores -o boxscores.csv -t csv
 

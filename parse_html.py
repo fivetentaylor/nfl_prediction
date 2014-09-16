@@ -86,12 +86,14 @@ def parse_linescore(html):
 	rec,team = [x[::-1] for x in tbl[0][::-1].split(' ', 1)]
 	v['team'] = team
 	v['id'] = ids[0]
+	v['id_opp'] = ids[1]
 	v.update(dict(zip(['wins','losses','ties'], [int(x) for x in rec[1:-1].split('-')])))
 
 	h = dict(zip(header, [int(x) for x in tbl[mid+1:]]))
 	rec,team = [x[::-1] for x in tbl[mid][::-1].split(' ', 1)]
 	h['team'] = team
 	h['id'] = ids[1]
+	h['id_opp'] = ids[0]
 	h.update(dict(zip(['wins','losses','ties'], [int(x) for x in rec[1:-1].split('-')])))
 
 	return v, h
