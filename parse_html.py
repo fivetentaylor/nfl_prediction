@@ -119,7 +119,7 @@ def main():
 						'day': day,
 						'month': month,
 						'year': year,
-						'week': rec['week'].split()[-1],
+						'week': int(rec['week'].split()[-1]),
 						'url': rec['url'] }
 
 			home = {	'host':True, 
@@ -127,7 +127,7 @@ def main():
 						'day': day,
 						'month': month,
 						'year': year,
-						'week': rec['week'],
+						'week': int(rec['week'].split()[-1]),
 						'url': rec['url'] }
 
 			v,h = parse_linescore(rec['linescore'])
