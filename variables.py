@@ -2,8 +2,24 @@
 
 import pandas as pd
 import numpy as np
+import networkx as nx
+import itertools as it
 
 stats = ['def_int','def_int_long','def_int_td','def_int_yds','fga','fgm','fumbles_forced','fumbles_rec','fumbles_rec_td','fumbles_rec_yds','kick_ret','kick_ret_long','kick_ret_td','kick_ret_yds','kick_ret_yds_per_ret','pass_att','pass_cmp','pass_int','pass_long','pass_td','pass_yds','punt','punt_long','punt_ret','punt_ret_long','punt_ret_td','punt_ret_yds','punt_ret_yds_per_ret','punt_yds','punt_yds_per_punt','rec','rec_long','rec_td','rec_yds','rush_att','rush_long','rush_td','rush_yds','sacks','score_1st','score_2nd','score_3rd','score_4th','score_final','xpa','xpm']
 
 data = pd.read_csv('db.csv')
-stat_vectors = data[stats].fillna(0).values
+data['game_id'] = data['url'].factorize()[0]
+
+def build_graph(data):
+	G = nx.MultiDiGraph()
+	G.add_nodes_from(data.id.unique())
+	itty = data[['id','id_opp','year','week']].itertuples()
+	stat_vectors = data[stats].fillna(0).itertuples()
+	def edge(x,y):
+		return (x[1], x[2], {'year':x[3], 'week':x[4], 'stats':np.array(y)})
+	G.add_edges_from([edge(*x) for x in it.izip(itty, stat_vectors)])
+	return G
+
+def game_attributes(home, visitor, year, week):
+	pass
+
