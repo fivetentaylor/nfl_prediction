@@ -114,13 +114,19 @@ def main():
 			year = date.strftime('%Y')
 			match = [x.strip() for x in match.split(' at ')]
 
+			soup = BeautifulSoup(rec['kick_stats'])
+			ids2 = [x.text for x in soup.findAll('th') if x.text]
+
 			visitor = {	'host':False, 
 						'name':match[0], 
 						'day': day,
 						'month': month,
 						'year': year,
 						'week': int(rec['week'].split()[-1]),
-						'url': rec['url'] }
+						'url': rec['url'],
+						'id2': ids2[0],
+						'id2_opp': ids2[1]
+						}
 
 			home = {	'host':True, 
 						'name':match[1], 
@@ -128,7 +134,10 @@ def main():
 						'month': month,
 						'year': year,
 						'week': int(rec['week'].split()[-1]),
-						'url': rec['url'] }
+						'url': rec['url'],
+						'id2': ids2[1],
+						'id2_opp': ids2[0]
+						}
 
 			v,h = parse_linescore(rec['linescore'])
 			visitor.update(v)
