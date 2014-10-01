@@ -114,7 +114,7 @@ def main():
 			year = date.strftime('%Y')
 			match = [x.strip() for x in match.split(' at ')]
 
-			soup = BeautifulSoup(rec['kick_stats'])
+			soup = BeautifulSoup(rec['scoring'])
 			ids2 = [x.text for x in soup.findAll('th') if x.text]
 
 			visitor = {	'host':False, 
