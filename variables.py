@@ -12,8 +12,8 @@ data['game_id'] = data['url'].factorize()[0]
 
 def build_graph(data, pred=lambda x: True):
 	G = nx.MultiDiGraph()
-	G.add_nodes_from(data.id.unique())
-	itty = data[data.apply(pred, axis=1)][['id','id_opp','year','week','host']].itertuples()
+	G.add_nodes_from(data.id2.unique())
+	itty = data[data.apply(pred, axis=1)][['id2','id2_opp','year','week','host']].itertuples()
 	stat_vectors = data[data.apply(pred, axis=1)][stats].fillna(0).itertuples()
 	def edge(x,y):
 		return (x[1], x[2], {'year':x[3], 'week':x[4], 'host':x[5], 'stats':np.array(y)})
@@ -28,7 +28,7 @@ def prevN(week, N=3):
 
 def gameFilter(year, week):
 	def pred(rec):
-		last3 = prevN(week, N=3)
+		last3 = prevN(week, N=5)
 		return (rec.year == year) and (rec.week in last3)
 	return pred
 	
@@ -37,6 +37,8 @@ graph = build_graph(data, gameFilter(2010, 4))
 def N_shortest(graph, home, visitor, N=5):
 	return sorted(list(nx.all_simple_paths(graph, home, visitor, N)), cmp=lambda x,y: len(x) - len(y))
 
+def predict(data, year, week):
+	data[(data.year <= year) & 
 
 
 
