@@ -26,10 +26,14 @@ def game_attributes(home, visitor, year, week):
 def prevN(week, N=3):
 	return [((week - x) % 16) + 1 for x in xrange(2,2+N)]
 
+def prevX(year, week, N=5):
+	return [(year + ((week - x) / 16), ((week - x) % 16) + 1) for x in xrange(2,2+N)]
+
 def gameFilter(year, week):
+	last_weeks = set(prevX(year, week, N=5))
 	def pred(rec):
-		last3 = prevN(week, N=5)
-		return (rec.year == year) and (rec.week in last3)
+		#return (rec.year == year) and (rec.week in last3)
+		return (rec.year, rec.week) in last_weeks
 	return pred
 	
 graph = build_graph(data, gameFilter(2010, 4))
