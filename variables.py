@@ -42,7 +42,9 @@ def N_shortest(graph, home, visitor, N=5):
 	return sorted(list(nx.all_simple_paths(graph, home, visitor, N)), cmp=lambda x,y: len(x) - len(y))
 
 def predict(data, year, week):
-	data[(data.year <= year) & 
+	graph = build_graph(data, gameFilter(2010, 4))
+	for h,v in data[(data.host == True) & (data.year == year) & (data.week == week)][['id2','id2_opp']].itertuples(False):
+		print '%s vs %s' % (h,v)
 
 
 
