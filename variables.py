@@ -44,25 +44,72 @@ def N_shortest(graph, home, visitor, N=5):
 def stat(graph,x,y):
 	return graph.edge[x][y][0]['stats'] - graph.edge[y][x][0]['stats']
 
-def predict(data, year, week):
+def getSpread(host, spread):
+	if spread == 'Pick':
+		return 0
+	s,t = [x[::-1] for x in spread[::-1].split(' ', 1)]
+	return float(s) if t == host else -float(s)
+	
+
+def train(data, year, week, hist=16):
+	train, target, spread = [], [], []
+	for y,w in prevX(year,week,hist):
+		games = data[(data.year == y) & (data.week == w)]
+		graph = build_graph(data, gameFilter(y, w))
+		for h,v in games[data.host == True][['id2','id2_opp']].itertuples(False):
+			h = games[games.id2 == h]
+			v = games[games.id2 == v]
+			h_final = h.score_final.iloc[0]
+			v_final = v.score_final.iloc[0]
+			target.append(v_final - h_final)
+			spread.append(getSpread(h.name.iloc[0], h['Vegas Line'].iloc[0]))
+			
+			top3 = N_shortest(graph, h.id2.iloc[0], v.id2.iloc[0], N=5)[:3]
+			if not len(top3):
+				raise Exception('Match %s vs %s had no paths' % (h,v))
+
+			vect = []
+			for path in top3:
+				for m in zip(path[:-1], path[1:]):
+					vect.append(stat(graph,*m))
+			train.append(np.mean(vect, axis=0))
+	return { 'data': np.array(train), 
+			 'target': np.array(target), 
+			 'spread': np.array(spread) }
+
+def test(data, year, week):
+	test, target, spread = [], [], []
 	games = data[(data.year == year) & (data.week == week)]
 	graph = build_graph(data, gameFilter(year, week))
 	for h,v in games[data.host == True][['id2','id2_opp']].itertuples(False):
-		h_final = games[games.id2 == h].score_final.iloc[0]
-		v_final = games[games.id2 == v].score_final.iloc[0]
-		print '%s %s vs %s %s' % (h, h_final, v, v_final)
-		print 'spread: %d' % (v_final - h_final)
-		
-		top3 = N_shortest(graph, h, v, N=4)[:3]
+		h = games[games.id2 == h]
+		v = games[games.id2 == v]
+		h_final = h.score_final.iloc[0]
+		v_final = v.score_final.iloc[0]
+		target.append(v_final - h_final)
+		spread.append(getSpread(h.name.iloc[0], h['Vegas Line'].iloc[0]))
+
+		top3 = N_shortest(graph, h.id2.iloc[0], v.id2.iloc[0], N=5)[:3]
 		if not len(top3):
 			raise Exception('Match %s vs %s had no paths' % (h,v))
-		print np.mean([sum([stat(graph,*m) for m in zip(path[:-1], path[1:])]) for path in top3], axis=0)
-			#print zip(path[:-1], path[1:])
-			#for match in zip(path[:-1], path[1:]):
-			#	graph.edge[match[0]][match[1]][0]['stats']
 
-if __name__ == '__main__':
-	predict(data, 2013, 10)
+		vect = []
+		for path in top3:
+			for m in zip(path[:-1], path[1:]):
+				vect.append(stat(graph,*m))
+		test.append(np.mean(vect, axis=0))
+	return { 'data': np.array(test),
+			 'target': np.array(target),
+			 'spread': np.array(spread) }
+
+train = train(data, 2013, 10)
+test = test(data, 2013, 11)
+
+from sklearn import ensemble
+model = ensemble.RandomForestRegressor()
+model.fit(train['data'], train['target'])
+model.predict(test['data'])
+
 
 
 
