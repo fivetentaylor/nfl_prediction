@@ -41,10 +41,28 @@ graph = build_graph(data, gameFilter(2010, 4))
 def N_shortest(graph, home, visitor, N=5):
 	return sorted(list(nx.all_simple_paths(graph, home, visitor, N)), cmp=lambda x,y: len(x) - len(y))
 
+def stat(graph,x,y):
+	return graph.edge[x][y][0]['stats'] - graph.edge[y][x][0]['stats']
+
 def predict(data, year, week):
-	graph = build_graph(data, gameFilter(2010, 4))
-	for h,v in data[(data.host == True) & (data.year == year) & (data.week == week)][['id2','id2_opp']].itertuples(False):
-		print '%s vs %s' % (h,v)
+	games = data[(data.year == year) & (data.week == week)]
+	graph = build_graph(data, gameFilter(year, week))
+	for h,v in games[data.host == True][['id2','id2_opp']].itertuples(False):
+		h_final = games[games.id2 == h].score_final.iloc[0]
+		v_final = games[games.id2 == v].score_final.iloc[0]
+		print '%s %s vs %s %s' % (h, h_final, v, v_final)
+		print 'spread: %d' % (v_final - h_final)
+		
+		top3 = N_shortest(graph, h, v, N=4)[:3]
+		if not len(top3):
+			raise Exception('Match %s vs %s had no paths' % (h,v))
+		print np.mean([sum([stat(graph,*m) for m in zip(path[:-1], path[1:])]) for path in top3], axis=0)
+			#print zip(path[:-1], path[1:])
+			#for match in zip(path[:-1], path[1:]):
+			#	graph.edge[match[0]][match[1]][0]['stats']
+
+if __name__ == '__main__':
+	predict(data, 2013, 10)
 
 
 
