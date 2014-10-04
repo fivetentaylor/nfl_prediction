@@ -42,14 +42,16 @@ def N_shortest(graph, home, visitor, N=5):
 	return sorted(list(nx.all_simple_paths(graph, home, visitor, N)), cmp=lambda x,y: len(x) - len(y))
 
 def stat(graph,x,y):
-	return graph.edge[x][y][0]['stats'] - graph.edge[y][x][0]['stats']
+	a = np.mean([z['stats'] for z in graph.edge[x][y].itervalues()], axis=0)
+	b = np.mean([z['stats'] for z in graph.edge[y][x].itervalues()], axis=0)
+	#return graph.edge[x][y][0]['stats'] - graph.edge[y][x][0]['stats']
+	return a - b
 
 def getSpread(host, spread):
 	if spread == 'Pick':
 		return 0
 	s,t = [x[::-1] for x in spread[::-1].split(' ', 1)]
 	return float(s) if t == host else -float(s)
-	
 
 def train(data, year, week, hist=16):
 	train, target, spread = [], [], []
@@ -73,8 +75,8 @@ def train(data, year, week, hist=16):
 				for m in zip(path[:-1], path[1:]):
 					vect.append(stat(graph,*m))
 			train.append(np.mean(vect, axis=0))
-	return { 'data': np.array(train), 
-			 'target': np.array(target), 
+	return { 'data': np.array(train),
+			 'target': np.array(target),
 			 'spread': np.array(spread) }
 
 def test(data, year, week):
@@ -101,6 +103,10 @@ def test(data, year, week):
 	return { 'data': np.array(test),
 			 'target': np.array(target),
 			 'spread': np.array(spread) }
+
+def classificationPerf(pred, actual, spread):
+	for p,a,s in zip(pred, actual, spread):
+		pass
 
 train = train(data, 2013, 10)
 test = test(data, 2013, 11)
