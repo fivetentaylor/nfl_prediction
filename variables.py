@@ -116,6 +116,30 @@ model = ensemble.RandomForestRegressor()
 model.fit(train['data'], train['target'])
 model.predict(test['data'])
 
+def teamRank(graph):
+	# initialize the node rank
+	for team in graph.nodes():
+		game_stats = []
+		for t,o in graph.edges([team]):
+			for td,od in zip(graph.edge[t][o].values(), graph.edge[o][t].values()):
+				game_stats.append(td['stats'] - od['stats'])
+		graph.node[team][0] = np.mean(game_stats, axis=0)
+
+	# iterate the node rank N times
+	for i in xrange(100):
+		for team in graph.nodes():
+			rank_stats = []
+			for t,o in graph.edges([team]):
+				rank_stats.append((graph.node[t][i] - graph.node[o][i]) / 2)
+			graph.node[team][i+1] = np.mean(rank_stats, axis=0)
+		
+	
+
+
+
+
+
+
 
 
 
