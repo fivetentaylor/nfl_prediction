@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import ipdb
 import pandas as pd
 import numpy as np
 import networkx as nx
@@ -108,82 +109,120 @@ def classificationPerf(pred, actual, spread):
 	for p,a,s in zip(pred, actual, spread):
 		pass
 
-train_1 = train(data, 2013, 10)
-test_1 = test(data, 2013, 11)
+#train_1 = train(data, 2013, 10)
+#test_1 = test(data, 2013, 11)
 
 from sklearn import ensemble
 from sklearn import linear_model
 #model_1 = ensemble.RandomForestRegressor()
-model_1 = linear_model.LinearRegression()
-model_1.fit(train_1['data'], train_1['target'])
-model_1.predict(test_1['data'])
+#model_1 = linear_model.LinearRegression()
+#model_1.fit(train_1['data'], train_1['target'])
+#model_1.predict(test_1['data'])
 
-def teamRank(graph, N=15):
+def teamRank(graph, N=15, func=np.mean, debug=True):
 	# initialize the node rank
 	for team in graph.nodes():
+		graph.node[team]['rank'] = graph.node[team].get('rank', {})
 		game_stats = []
 		for t,o in graph.edges([team]):
 			for td,od in zip(graph.edge[t][o].values(), graph.edge[o][t].values()):
 				game_stats.append(td['stats'] - od['stats'])
-		graph.node[team][0] = np.mean(game_stats, axis=0)
+		graph.node[team]['rank'][func.__name__] = func(game_stats, axis=0)
 
 	# iterate the node rank N times
 	for i in xrange(N):
 		for team in graph.nodes():
 			rank_stats = []
 			for t,o in graph.edges([team]):
-				a = np.mean([x['stats'] for x in graph.edge[t][o].values()], axis=0)
-				rank_stats.append((a - graph.node[o][i]) / 2)
-			graph.node[team][i+1] = np.mean(rank_stats, axis=0)
+				a = func([x['stats'] for x in graph.edge[t][o].values()], axis=0)
+				rank_stats.append((a - graph.node[o]['rank'][func.__name__]) / 2)
+			graph.node[team]['rank'][func.__name__] = func(rank_stats, axis=0)
+			#graph.node[team][i+1] = func(rank_stats, axis=0)
+
+	'''
+	if debug:
+		ipdb.set_trace()
+		for k,v in graph.node['SDG'].iteritems():
+			print '%d: %s' % (k,v)
 
 	for team in graph.nodes():
 		graph.node[team]['rank'] = graph.node[team][N]
+	'''
 		
 	
 def trainTeamRank(data, year, week, hist=64):
-	train, target, spread = [], [], []
+	train, target, spread, names = [], [], [], []
 	for y,w in prevX(year,week,hist):
 		games = data[(data.year == y) & (data.week == w)]
 		graph = build_graph(data, gameFilter(y, w))
-		teamRank(graph)
+		teamRank(graph, func=np.max)
+		teamRank(graph, func=np.min)
+		teamRank(graph, func=np.median)
+		#teamRank(graph, func=np.mean)
 		for h,v in games[data.host == True][['id2','id2_opp']].itertuples(False):
 			H = games[games.id2 == h]
 			V = games[games.id2 == v]
 			h_final = H.score_final.iloc[0]
 			v_final = V.score_final.iloc[0]
 			target.append(v_final - h_final)
-			spread.append(getSpread(h, H['Vegas Line'].iloc[0]))
-			train.append(np.hstack([graph.node[h]['rank'], graph.node[v]['rank']]))
-	return { 'data': np.array(train),
+			names.append(H.name.iloc[0])
+			spread.append(getSpread(names[-1], H['Vegas Line'].iloc[0]))
+			#ipdb.set_trace()
+			train.append(np.hstack(it.chain(graph.node[h]['rank'].itervalues(), graph.node[v]['rank'].itervalues())))
+	return { 'home': names,
+			 'data': np.array(train),
 			 'target': np.array(target),
 			 'spread': np.array(spread) }
 
 def testTeamRank(data, year, week):
-	test, target, spread = [], [], []
+	test, target, spread, names = [], [], [], []
 	games = data[(data.year == year) & (data.week == week)]
 	graph = build_graph(data, gameFilter(year, week))
-	teamRank(graph)
+	teamRank(graph, func=np.max)
+	teamRank(graph, func=np.min)
+	teamRank(graph, func=np.median)
+	#teamRank(graph, func=np.mean)
 	for h,v in games[data.host == True][['id2','id2_opp']].itertuples(False):
 		H = games[games.id2 == h]
 		V = games[games.id2 == v]
 		h_final = H.score_final.iloc[0]
 		v_final = V.score_final.iloc[0]
 		target.append(v_final - h_final)
-		spread.append(getSpread(h, H['Vegas Line'].iloc[0]))
-		test.append(np.hstack([graph.node[h]['rank'], graph.node[v]['rank']]))
+		names.append(H.name.iloc[0])
+		spread.append(getSpread(names[-1], H['Vegas Line'].iloc[0]))
+		#test.append(np.hstack([graph.node[h]['rank'], graph.node[v]['rank']]))
+		#ipdb.set_trace()
+		test.append(np.hstack(it.chain(graph.node[h]['rank'].itervalues(), graph.node[v]['rank'].itervalues())))
 
-	return { 'data': np.array(test),
+	return { 'home': names,
+			 'data': np.array(test),
 			 'target': np.array(target),
 			 'spread': np.array(spread) }
 
-train_2 = trainTeamRank(data, 2013, 10)
-test_2 = testTeamRank(data, 2013, 11)
+'''
+train_2 = trainTeamRank(data, 2014, 4)
+test_2 = testTeamRank(data, 2014, 5)
 
 model_2 = ensemble.RandomForestRegressor()
-#model_2 = linear_model.LinearRegression()
+model_2 = linear_model.LinearRegression()
 model_2.fit(train_2['data'], train_2['target'])
 model_2.predict(test_2['data'])
+'''
 
+for year, week in prevX(2014, 5, 24)[::-1]:
+	train = None
+	if week > 1:
+		train = trainTeamRank(data, year, week-1)
+	else:
+		train = trainTeamRank(data, year-1, 16)
+	test = testTeamRank(data, year, week)
+	model = linear_model.LinearRegression()
+	model.fit(train['data'], train['target'])
+	correct = []
+	for p,t,s in zip(model.predict(test['data']), test['target'], test['spread']):
+		correct.append(((p-s) > 0) == ((t-s) > 0))
+	print '%d-%d %f correct' % (year, week, sum(correct) / float(len(correct)))
+		
 
 
 

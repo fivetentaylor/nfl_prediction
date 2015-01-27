@@ -9,12 +9,27 @@ import re
 class BoxscoresSpider(CrawlSpider):
     name = 'boxscores'
     allowed_domains = ['pro-football-reference.com']
-    start_urls = ['http://www.pro-football-reference.com']
+    #start_urls = ['http://www.pro-football-reference.com']
+    start_urls = [
+		'http://www.pro-football-reference.com/years/2003/games.htm',
+		'http://www.pro-football-reference.com/years/2004/games.htm',
+		'http://www.pro-football-reference.com/years/2005/games.htm',
+		'http://www.pro-football-reference.com/years/2006/games.htm',
+		'http://www.pro-football-reference.com/years/2007/games.htm',
+		'http://www.pro-football-reference.com/years/2008/games.htm',
+		'http://www.pro-football-reference.com/years/2009/games.htm',
+		'http://www.pro-football-reference.com/years/2010/games.htm',
+		'http://www.pro-football-reference.com/years/2011/games.htm',
+		'http://www.pro-football-reference.com/years/2012/games.htm',
+		'http://www.pro-football-reference.com/years/2013/games.htm',
+		'http://www.pro-football-reference.com/years/2014/games.htm'
+	]
 
     rules = (
-        Rule(SgmlLinkExtractor(allow=r'/boxscores/$', restrict_xpaths='//*[@id="quick_index"]/ul')),
-        Rule(SgmlLinkExtractor(allow=r'/years/[0-9]{4}/games\.htm', restrict_xpaths='//*[@id="page_content"]/table[1]/tr/td[a > 2003]/a')),
-        Rule(SgmlLinkExtractor(allow=r'/boxscores/.*\.htm', restrict_xpaths='//*[@id="div_games"]'), callback='parse_item')
+        #Rule(SgmlLinkExtractor(allow=r'/boxscores/$', restrict_xpaths='//*[@id="quick_index"]/ul')),
+        #Rule(SgmlLinkExtractor(allow=r'/years/2014/games\.htm', restrict_xpaths='//*[@id="page_content"]/table[1]/tr/td[a > 2003]/a')),
+        #Rule(SgmlLinkExtractor(allow=r'/years/[0-9]{4}/games\.htm', restrict_xpaths='//*[@id="page_content"]/table[1]/tr/td[a > 2003]/a')),
+        Rule(SgmlLinkExtractor(allow=r'/boxscores/.*\.htm', restrict_xpaths='//*[@id="div_games"]'), callback='parse_item'),
     )
 
     def parse_item(self, response):
